@@ -1,0 +1,23 @@
+{
+  "name": "rss-nodejs-file-manager",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ihalavin/rss-nodejs-file-manager.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ihalavin/rss-nodejs-file-manager/issues"
+  },
+  "homepage": "https://github.com/ihalavin/rss-nodejs-file-manager#readme",
+  "description": "",
+  "engines": {
+    "node": ">=22.14.0"
+  }
+}
