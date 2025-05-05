@@ -6,6 +6,7 @@ import {createDirectory} from "./fs/createDirectory.js";
 import {homedir} from 'node:os';
 import {resolve} from 'node:path';
 import {access, stat} from 'node:fs/promises';
+import {deleteFile} from "./fs/deleteFile.js";
 
 const username = getEnvVariable('username');
 console.log(`Welcome to the File Manager, ${username}!`);
@@ -53,6 +54,10 @@ process.stdin.on('data', async (data) => {
       const path = parseFilePathFromSecondArgument(input);
 
       await createDirectory(path);
+    } else if (input.startsWith('rm ')) {
+      const path = parseFilePathFromSecondArgument(input);
+
+      await deleteFile(path);
     } else if (input === 'up\n') {
       const absolutePath = resolveInputPath('..');
 

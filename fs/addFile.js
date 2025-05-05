@@ -1,6 +1,6 @@
 import {access, writeFile} from "node:fs/promises";
 
-export async function addFile(filePath) {
+export function addFile(filePath) {
   return access(filePath)
     .then(() => {
       throw Error('File already exists');
