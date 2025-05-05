@@ -11,6 +11,7 @@ import {deleteFile} from './fs/deleteFile.js';
 import {renameFile} from './fs/renameFile.js';
 import {copyFile} from './fs/copyFile.js';
 import {moveFile} from './fs/moveFile.js';
+import {hashFile} from './hash/hashFile.js';
 
 const username = getEnvVariable('username');
 console.log(`Welcome to the File Manager, ${username}!`);
@@ -79,6 +80,10 @@ process.stdin.on('data', async (data) => {
       const [filePath, newFilePath] = parsePathsFromInput(input);
 
       await moveFile(filePath, newFilePath);
+    } else if (input === 'up\n') {
+      const absolutePath = resolveInputPath('..');
+
+      await changeDirectory(absolutePath);
     } else if (input.startsWith('os ')) {
       const [argument] = parseArguments(input);
 
@@ -102,11 +107,11 @@ process.stdin.on('data', async (data) => {
       } else if (argument === '--architecture') {
         console.log(process.arch);
       }
+    } else if (input.startsWith('hash ')) {
+      const [path] = parsePathsFromInput(input);
 
-    } else if (input === 'up\n') {
-      const absolutePath = resolveInputPath('..');
-
-      await changeDirectory(absolutePath);
+      const hash = await hashFile(path);
+      console.log(hash);
     } else if (input === '.exit\n') {
       programExit();
     } else {
