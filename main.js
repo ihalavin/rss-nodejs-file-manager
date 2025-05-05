@@ -8,6 +8,7 @@ import {resolve} from 'node:path';
 import {access, stat} from 'node:fs/promises';
 import {deleteFile} from "./fs/deleteFile.js";
 import {renameFile} from "./fs/renameFile.js";
+import {copyFile} from "./fs/copyFile.js";
 
 const username = getEnvVariable('username');
 console.log(`Welcome to the File Manager, ${username}!`);
@@ -65,6 +66,12 @@ process.stdin.on('data', async (data) => {
       const newFilePath = resolveInputPath(args[2].trim());
 
       await renameFile(filePath, newFilePath);
+    } else if (input.startsWith('cp ')) {
+      const args = input.split(' ');
+      const filePath = resolveInputPath(args[1].trim());
+      const newFilePath = resolveInputPath(args[2].trim());
+
+      await copyFile(filePath, newFilePath);
     } else if (input === 'up\n') {
       const absolutePath = resolveInputPath('..');
 
@@ -85,7 +92,7 @@ process.on('SIGINT', () => {
   programExit();
 });
 
-process.on('uncaughtException', () => {
+process.on('uncaughtException', (error) => {
   console.log('Operation failed');
   printCurrentDirectory();
 });
