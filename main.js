@@ -1,7 +1,8 @@
 import {getEnvVariable} from './cli/env.js';
 import {homedir} from 'node:os';
-import {readdir, stat} from 'node:fs/promises';
-import * as path from 'node:path';
+import {printDirectoryContent} from './cli/print.js';
+import {resolve} from 'node:path';
+import {catFile} from "./fs/catFile.js";
 
 const username = getEnvVariable('username');
 console.log(`Welcome to the File Manager, ${username}!`);
@@ -9,79 +10,31 @@ console.log(`Welcome to the File Manager, ${username}!`);
 let currentDirectory = homedir();
 printCurrentDirectory();
 
-function getDirectoryContent(directory) {
-  readdir(directory).then((files) => {
-    let results = {};
-    files.forEach((file) => {
-      stat(path.join(directory, file)).then((stat) => {
-        results.append({
-          name: file,
-          type: stat.isDirectory() ? 'directory' : 'file',
-        });
-      });
-    });
-
-    return results;
-  });
-
-  return {};
-}
-
-function printDirectoryContent(content) {
-  // Define column headers and widths
-  const headers = ['Index', 'Name', 'Type'];
-  
-  // Find the maximum width needed for each column
-  const nameWidth = Math.max(
-    'Name'.length,
-    ...content.map(item => item.name.length)
-  );
-  
-  const typeWidth = Math.max(
-    'Type'.length,
-    ...content.map(item => item.type.length)
-  );
-  
-  const indexWidth = Math.max(
-    'Index'.length,
-    content.length.toString().length
-  );
-  
-  // Create header row
-  console.log(
-    `| ${headers[0].padEnd(indexWidth)} | ${headers[1].padEnd(nameWidth)} | ${headers[2].padEnd(typeWidth)} |`
-  );
-  
-  // Create separator row
-  console.log(
-    `| ${'-'.repeat(indexWidth)} | ${'-'.repeat(nameWidth)} | ${'-'.repeat(typeWidth)} |`
-  );
-  
-  // Create content rows
-  content.forEach((item, index) => {
-    console.log(
-      `| ${index.toString().padEnd(indexWidth)} | ${item.name.padEnd(nameWidth)} | ${item.type.padEnd(typeWidth)} |`
-    );
-  });
-}
-
-process.stdin.on('data', (data) => {
+process.stdin.on('data', async (data) => {
   const input = data.toString();
-  if (input === 'ls\n') {
-    const content = getDirectoryContent(currentDirectory);
-    printDirectoryContent(content);
-  } else if (input === '.exit\n') {
-    programExit();
-  } else {
-    console.log('Invalid input');
-  }
+  try {
+    if (input === 'ls\n') {
+      await printDirectoryContent(currentDirectory);
+    } else if (input.startsWith('cat ')) {
+      const filePath = input.split(' ')[1].trim();
+      const absolutePath = resolveInputPath(filePath);
 
-  printCurrentDirectory();
+      await catFile(absolutePath);
+    } else if (input === '.exit\n') {
+      programExit();
+    } else {
+      console.log('Invalid input');
+    }
+  } catch (e) {
+    console.log('Operation failed');
+  } finally {
+    printCurrentDirectory();
+  }
 });
 
 process.on('SIGINT', () => {
   programExit();
-})
+});
 
 function programExit() {
   console.log(`Thank you for using File Manager, ${username}, goodbye!`);
@@ -89,5 +42,13 @@ function programExit() {
 }
 
 function printCurrentDirectory() {
-  console.log(`You are currently in ${currentDirectory}`);
+  process.stdout.write(`You are currently in ${currentDirectory}: `)
+}
+
+function resolveInputPath(path) {
+  if (!path) {
+    throw Error('Invalid path');
+  }
+
+  return resolve(currentDirectory, path);
 }
