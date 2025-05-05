@@ -1,4 +1,4 @@
-import {access, rename} from "node:fs/promises";
+import {access, rename} from 'node:fs/promises';
 
 export async function renameFile(filePath, newFilePath) {
   await access(filePath);

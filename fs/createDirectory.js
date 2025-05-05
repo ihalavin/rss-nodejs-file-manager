@@ -1,4 +1,4 @@
-import {access, mkdir} from "node:fs/promises";
+import {access, mkdir} from 'node:fs/promises';
 
 export function createDirectory(path) {
   return access(path)

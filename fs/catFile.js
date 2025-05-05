@@ -1,5 +1,5 @@
 import {createReadStream} from 'node:fs';
-import {access, stat} from "node:fs/promises";
+import {access, stat} from 'node:fs/promises';
 
 export async function catFile(filePath) {
   await access(filePath);

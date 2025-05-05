@@ -1,4 +1,4 @@
-import {access, writeFile} from "node:fs/promises";
+import {access, writeFile} from 'node:fs/promises';
 
 export function addFile(filePath) {
   return access(filePath)

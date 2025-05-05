@@ -1,6 +1,6 @@
-import {access, copyFile as cp} from "node:fs/promises";
-import {dirname} from "node:path";
-import {createReadStream, createWriteStream} from "node:fs";
+import {access} from 'node:fs/promises';
+import {dirname} from 'node:path';
+import {createReadStream, createWriteStream} from 'node:fs';
 
 export async function copyFile(filePath, newFilePath) {
   const parentDirectory = getPathParentDirectory(newFilePath);
