@@ -12,6 +12,8 @@ import {renameFile} from './fs/renameFile.js';
 import {copyFile} from './fs/copyFile.js';
 import {moveFile} from './fs/moveFile.js';
 import {hashFile} from './hash/hashFile.js';
+import {compressFile} from './zip/compress.js';
+import {decompressFile} from './zip/decompress.js';
 
 const username = getEnvVariable('username');
 console.log(`Welcome to the File Manager, ${username}!`);
@@ -112,6 +114,14 @@ process.stdin.on('data', async (data) => {
 
       const hash = await hashFile(path);
       console.log(hash);
+    } else if (input.startsWith('compress ')) {
+      const [filePath, newFilePath] = parsePathsFromInput(input);
+
+      await compressFile(filePath, newFilePath);
+    } else if (input.startsWith('decompress ')) {
+      const [filePath, newFilePath] = parsePathsFromInput(input);
+
+      await decompressFile(filePath, newFilePath);
     } else if (input === '.exit\n') {
       programExit();
     } else {
