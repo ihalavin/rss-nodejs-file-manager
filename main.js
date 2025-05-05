@@ -2,7 +2,7 @@ import * as os from 'node:os';
 import {resolve} from 'node:path';
 import {access, stat} from 'node:fs/promises';
 
-import {getEnvVariable} from './cli/env.js';
+import {getConsoleArgument} from './cli/env.js';
 import {printDirectoryContent} from './cli/print.js';
 import {catFile} from './fs/catFile.js';
 import {addFile} from './fs/addFile.js';
@@ -15,11 +15,107 @@ import {hashFile} from './hash/hashFile.js';
 import {compressFile} from './zip/compress.js';
 import {decompressFile} from './zip/decompress.js';
 
-const username = getEnvVariable('username');
+const username = getConsoleArgument('username');
 console.log(`Welcome to the File Manager, ${username}!`);
 
 let currentDirectory = os.homedir();
 printCurrentDirectory();
+
+const osHandlers = {
+  '--EOL': async () => {
+    console.log(os.EOL.replace(/\n/g, '\\n'));
+  },
+  '--cpus': async () => {
+    const cpuInfo = os.cpus();
+
+    console.log(`Overall amount of CPUs: ${cpuInfo.length}`);
+    console.log('\nCPU Details:');
+
+    cpuInfo.forEach((cpu, index) => {
+      // Convert speed from MHz to GHz with 2 decimal places
+      const clockRateGHz = (cpu.speed / 1000).toFixed(2);
+      console.log(`CPU ${index + 1}: ${cpu.model} (${clockRateGHz} GHz)`);
+    });
+  },
+  '--homedir': async () => {
+    console.log(os.homedir());
+  },
+  '--username': async () => {
+    console.log(os.userInfo().username);
+  },
+  '--architecture': async () => {
+    console.log(process.arch);
+  }
+}
+
+const handlers = {
+  'ls': async () => {
+    await printDirectoryContent(currentDirectory);
+  },
+  'cat': async (input) => {
+    const [path] = parsePathsFromInput(input);
+    await catFile(path);
+  },
+  'cd': async (input) => {
+    const [path] = parsePathsFromInput(input);
+    await changeDirectory(path);
+  },
+  'add': async (input) => {
+    const [path] = parsePathsFromInput(input);
+    await addFile(path);
+  },
+  'mkdir': async (input) => {
+    const [path] = parsePathsFromInput(input);
+    await createDirectory(path);
+  },
+  'rm': async (input) => {
+    const [path] = parsePathsFromInput(input);
+    await deleteFile(path);
+  },
+  'rn': async (input) => {
+    const [filePath, newFilePath] = parsePathsFromInput(input);
+    await renameFile(filePath, newFilePath);
+  },
+  'cp': async (input) => {
+    const [filePath, newFilePath] = parsePathsFromInput(input);
+    await copyFile(filePath, newFilePath);
+  },
+  'mv': async (input) => {
+    const [filePath, newFilePath] = parsePathsFromInput(input);
+    await moveFile(filePath, newFilePath);
+  },
+  'up': async () => {
+    const absolutePath = resolveInputPath('..');
+    await changeDirectory(absolutePath);
+  },
+  'os': async (input) => {
+    const [argument] = parseArguments(input);
+
+    const osHandler = osHandlers[argument];
+
+    if (osHandler) {
+      await osHandler();
+    } else {
+      throw Error('Invalid argument');
+    }
+  },
+  'hash': async (input) => {
+    const [path] = parsePathsFromInput(input);
+    const hash = await hashFile(path);
+    console.log(hash);
+  },
+  'compress': async (input) => {
+    const [filePath, newFilePath] = parsePathsFromInput(input);
+    await compressFile(filePath, newFilePath);
+  },
+  'decompress': async (input) => {
+    const [filePath, newFilePath] = parsePathsFromInput(input);
+    await decompressFile(filePath, newFilePath);
+  },
+  '.exit': async () => {
+    programExit();
+  }
+};
 
 function changeDirectory(directoryPath) {
   return access(directoryPath).then(async () => {
@@ -46,86 +142,15 @@ function parsePathsFromInput(input) {
 }
 
 process.stdin.on('data', async (data) => {
-  const input = data.toString();
+  const input = data.toString().trim();
+  const command = input.split(' ')[0];
   try {
-    if (input === 'ls\n') {
-      await printDirectoryContent(currentDirectory);
-    } else if (input.startsWith('cat ')) {
-      const [path] = parsePathsFromInput(input);
+    const handler = handlers[command];
 
-      await catFile(path);
-    } else if (input.startsWith('cd ')) {
-      const [path] = parsePathsFromInput(input);
-
-      await changeDirectory(path);
-    } else if (input.startsWith('add ')) {
-      const [path] = parsePathsFromInput(input);
-
-      await addFile(path);
-    } else if (input.startsWith('mkdir ')) {
-      const [path] = parsePathsFromInput(input);
-
-      await createDirectory(path);
-    } else if (input.startsWith('rm ')) {
-      const [path] = parsePathsFromInput(input);
-
-      await deleteFile(path);
-    } else if (input.startsWith('rn ')) {
-      const [filePath, newFilePath] = parsePathsFromInput(input);
-
-      await renameFile(filePath, newFilePath);
-    } else if (input.startsWith('cp ')) {
-      const [filePath, newFilePath] = parsePathsFromInput(input);
-
-      await copyFile(filePath, newFilePath);
-    } else if (input.startsWith('mv ')) {
-      const [filePath, newFilePath] = parsePathsFromInput(input);
-
-      await moveFile(filePath, newFilePath);
-    } else if (input === 'up\n') {
-      const absolutePath = resolveInputPath('..');
-
-      await changeDirectory(absolutePath);
-    } else if (input.startsWith('os ')) {
-      const [argument] = parseArguments(input);
-
-      if (argument === '--EOL') {
-        console.log(os.EOL.replace(/\n/g, '\\n'));
-      } else if (argument === '--cpus') {
-        const cpuInfo = os.cpus();
-
-        console.log(`Overall amount of CPUs: ${cpuInfo.length}`);
-        console.log('\nCPU Details:');
-
-        cpuInfo.forEach((cpu, index) => {
-          // Convert speed from MHz to GHz with 2 decimal places
-          const clockRateGHz = (cpu.speed / 1000).toFixed(2);
-          console.log(`CPU ${index + 1}: ${cpu.model} (${clockRateGHz} GHz)`);
-        });
-      } else if (argument === '--homedir') {
-        console.log(os.homedir());
-      } else if (argument === '--username') {
-        console.log(os.userInfo().username);
-      } else if (argument === '--architecture') {
-        console.log(process.arch);
-      }
-    } else if (input.startsWith('hash ')) {
-      const [path] = parsePathsFromInput(input);
-
-      const hash = await hashFile(path);
-      console.log(hash);
-    } else if (input.startsWith('compress ')) {
-      const [filePath, newFilePath] = parsePathsFromInput(input);
-
-      await compressFile(filePath, newFilePath);
-    } else if (input.startsWith('decompress ')) {
-      const [filePath, newFilePath] = parsePathsFromInput(input);
-
-      await decompressFile(filePath, newFilePath);
-    } else if (input === '.exit\n') {
-      programExit();
+    if (handler) {
+      await handler(input);
     } else {
-      console.log('Invalid input');
+      console.log('Invalid command');
     }
   } catch (e) {
     console.log('Operation failed');
