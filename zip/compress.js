@@ -11,7 +11,6 @@ export async function compressFile(sourcePath, destinationPath) {
     throw new Error('Source is not a file');
   }
 
-
   const brotliCompress = createBrotliCompress({
     params: {
       [Symbol.for('level')]: 11,

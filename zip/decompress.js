@@ -11,7 +11,6 @@ export async function decompressFile(sourcePath, destinationPath) {
     throw new Error('Source is not a file');
   }
 
-
   const brotliDecompress = createBrotliDecompress({
     params: {
       [Symbol.for('level')]: 11,
